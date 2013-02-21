@@ -13,7 +13,7 @@ Before you run the program, [Kinect for Windows SDK] [1] and
 [Microsoft Speech Platform SDK v11] [2] need to be installed
 on your Windows machine.
 
-When you're ready, just execute [ConsoleKinectServer.exe] [2].
+When you're ready, just execute [ConsoleKinectServer.exe] [3].
 You may add `-port PORT_NUMBER` parameter to change the port.
 
 ### Kinect client (Java)
