@@ -25,6 +25,9 @@ Just double-click [KinectThriftClient.jar] [4].
   [3]: https://github.com/arcatdmz/kinect-thrift-server/blob/master/csharp/ConsoleKinectServer/bin/Release/ConsoleKinectServer.exe "ConsoleKinectServer.exe"
   [4]: https://github.com/arcatdmz/kinect-thrift-server/blob/master/java/KinectThriftClient.jar "KinectThriftClient.jar"
 
+## License
+
+This work is licensed under Apache License, Version 2.0.
+
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-http://github.com/arcatdmz/kinect-thrift-server
-arc (at) digitalmuseum.jp
+http://github.com/arcatdmz/kinect-thrift-server | i@junkato.jp
