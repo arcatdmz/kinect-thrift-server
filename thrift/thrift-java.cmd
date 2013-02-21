@@ -1,1 +1,1 @@
-thrift -gen java KinectService.thrift
+thrift -gen java -out ..\java\src\ KinectService.thrift

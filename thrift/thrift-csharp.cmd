@@ -1,1 +1,1 @@
-thrift -gen csharp KinectService.thrift
+thrift -gen csharp -out ..\csharp\ConsoleKinectServer\ KinectService.thrift
