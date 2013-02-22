@@ -14,6 +14,9 @@
 	<!-- Jar file name -->
 	<property name="kinect-jar.name" value="KinectThriftClient.jar" />
 	<property name="kinect-runnable-jar.name" value="KinectThriftClient-runnable.jar" />
+
+	<!-- Zip file name -->
+	<property name="kinect-zip.name" value="KinectThrift.zip" />
 	
 	<!-- Runnable Jar: ANT 1.7 is required -->
     <target name="kinect-runnable-jar" depends="kinect-compile">
@@ -35,11 +38,22 @@
 	<!-- Jar -->
     <target name="kinect-jar" depends="kinect-compile">
         <jar destfile="${kinect-jar.name}">
-            <fileset dir="bin" includes="${kinect-classes.includes}"/>
-            <zipfileset src="lib/libthrift-0.9.0.jar"/>
-            <zipfileset src="lib/slf4j-api-1.5.8.jar"/>
-            <zipfileset src="lib/slf4j-simple-1.5.8.jar"/>
+            <zipfileset dir="lib" includes="libthrift-0.9.0.jar"/>
+            <zipfileset dir="lib" includes="slf4j-api-1.5.8.jar"/>
+            <zipfileset dir="lib" includes="slf4j-simple-1.5.8.jar"/>
         </jar>
+    </target>
+
+	<!-- Zip -->
+    <target name="kinect-zip" depends="kinect-jar, kinect-runnable-jar">
+        <zip destfile="../${kinect-zip.name}">
+            <zipfileset dir="../csharp/ConsoleKinectServer/bin/Release/" includes="ConsoleKinectServer.exe" fullpath="csharp/ConsoleKinectServer.exe"/>
+            <zipfileset dir="../csharp/ConsoleKinectServer/bin/Release/" includes="Thrift.dll" fullpath="csharp/Thrift.dll"/>
+            <zipfileset dir="./" includes="${kinect-jar.name}" fullpath="java/${kinect-jar.name}" />
+            <zipfileset dir="./" includes="${kinect-runnable-jar.name}" fullpath="java/${kinect-runnable-jar.name}" />
+        	<zipfileset dir="../" includes="*.txt" />
+        	<zipfileset dir="../" includes="*.md" />
+        </zip>
     </target>
 	
 	<!-- Compile -->
