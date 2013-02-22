@@ -1,20 +1,63 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project default="create_run_jar" name="Create Runnable Jar for Project kinect-thrift-client with Jar-in-Jar Loader">
-    <!--ANT 1.7 is required                                        -->
-    <target name="create_run_jar">
-        <jar destfile="KinectThriftClient.jar">
+<project default="kinect-runnable-jar" name="Create Runnable Jar for Project kinect-thrift-client with Jar-in-Jar Loader">
+
+	<!-- Dependent class path -->
+	<property name="kinect-classpath" value="./bin; ./lib/libthrift-0.9.0.jar; ./lib/slf4j-api-1.5.8.jar; ./lib/slf4j-simple-1.5.8.jar" />
+
+	<!-- Source directory -->
+	<property name="kinect-src.dir" value="src" />
+
+	<!-- Classes destination directory -->
+	<property name="kinect-classes.dir" value="bin" />
+	<property name="kinect-classes.includes" value="jp/digitalmuseum/kinect/*.class" />
+
+	<!-- Jar file name -->
+	<property name="kinect-jar.name" value="KinectThriftClient.jar" />
+	<property name="kinect-runnable-jar.name" value="KinectThriftClient-runnable.jar" />
+	
+	<!-- Runnable Jar: ANT 1.7 is required -->
+    <target name="kinect-runnable-jar" depends="kinect-compile">
+        <jar destfile="${kinect-runnable-jar.name}">
             <manifest>
                 <attribute name="Main-Class" value="org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader"/>
                 <attribute name="Rsrc-Main-Class" value="jp.digitalmuseum.kinect.app.KinectClientFrame"/>
                 <attribute name="Class-Path" value="."/>
-                <attribute name="Rsrc-Class-Path" value="./ libthrift-0.9.0.jar log4j-1.2.14.jar slf4j-api-1.5.8.jar slf4j-log4j12-1.5.8.jar"/>
+                <attribute name="Rsrc-Class-Path" value="./ libthrift-0.9.0.jar slf4j-api-1.5.8.jar slf4j-simple-1.5.8.jar"/>
             </manifest>
             <zipfileset src="lib/jar-in-jar-loader.zip"/>
             <fileset dir="bin"/>
             <zipfileset dir="lib" includes="libthrift-0.9.0.jar"/>
-            <zipfileset dir="lib" includes="log4j-1.2.14.jar"/>
             <zipfileset dir="lib" includes="slf4j-api-1.5.8.jar"/>
-            <zipfileset dir="lib" includes="slf4j-log4j12-1.5.8.jar"/>
+            <zipfileset dir="lib" includes="slf4j-simple-1.5.8.jar"/>
         </jar>
     </target>
+
+	<!-- Jar -->
+    <target name="kinect-jar" depends="kinect-compile">
+        <jar destfile="${kinect-jar.name}">
+            <fileset dir="bin" includes="${kinect-classes.includes}"/>
+            <zipfileset src="lib/libthrift-0.9.0.jar"/>
+            <zipfileset src="lib/slf4j-api-1.5.8.jar"/>
+            <zipfileset src="lib/slf4j-simple-1.5.8.jar"/>
+        </jar>
+    </target>
+	
+	<!-- Compile -->
+	<target name="kinect-compile">
+		<mkdir dir="${kinect-classes.dir}" />
+		<javac srcdir="${kinect-src.dir}" destdir="${kinect-classes.dir}"
+				target="1.6"
+				source="1.6"
+				optimize="on"
+				classpath="${kinect-classpath}" />
+	</target>
+
+	<!-- Clean -->
+	<target name="kinect-clean">
+		<delete dir="${kinect-classes.dir}" />
+		<delete>
+			<fileset dir="./" includes="${kinect-jar.name}" />
+			<fileset dir="./" includes="${kinect-runnable-jar.name}" />
+		</delete>
+	</target>
 </project>

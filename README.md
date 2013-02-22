@@ -18,12 +18,16 @@ You may add `-port PORT_NUMBER` parameter to change the port.
 
 ### Kinect client (Java)
 
-Just double-click [KinectThriftClient.jar] [4].
+Just double-click [KinectThriftClient-runnable.jar] [4].
+
+You can also use its features from your Java application when
+you include [KinectThriftClient.jar] [5] in the classpath.
 
   [1]: http://www.microsoft.com/en-us/kinectforwindows/develop/developer-downloads.aspx "Kinect for Windows SDK"
   [2]: http://www.microsoft.com/en-us/download/details.aspx?id=27226 "Microsoft Speech Platform SDK v11"
   [3]: https://github.com/arcatdmz/kinect-thrift-server/blob/master/csharp/ConsoleKinectServer/bin/Release/ConsoleKinectServer.exe "ConsoleKinectServer.exe"
-  [4]: https://github.com/arcatdmz/kinect-thrift-server/blob/master/java/KinectThriftClient.jar "KinectThriftClient.jar"
+  [4]: https://github.com/arcatdmz/kinect-thrift-server/blob/master/java/KinectThriftClient-runnable.jar "KinectThriftClient-runnable.jar"
+  [5]: https://github.com/arcatdmz/kinect-thrift-server/blob/master/java/KinectThriftClient.jar "KinectThriftClient.jar"
 
 ## License
 
