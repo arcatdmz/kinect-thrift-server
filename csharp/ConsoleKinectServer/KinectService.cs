@@ -19,6 +19,11 @@ namespace Jp.Digitalmuseum.Kinect
 {
   public partial class KinectService {
     public interface Iface {
+      bool isDeviceConnected();
+      #if SILVERLIGHT
+      IAsyncResult Begin_isDeviceConnected(AsyncCallback callback, object state, );
+      bool End_isDeviceConnected(IAsyncResult asyncResult);
+      #endif
       void setVoiceEnabled(bool isEnabled);
       #if SILVERLIGHT
       IAsyncResult Begin_setVoiceEnabled(AsyncCallback callback, object state, bool isEnabled);
@@ -105,6 +110,67 @@ namespace Jp.Digitalmuseum.Kinect
         get { return oprot_; }
       }
 
+
+      
+      #if SILVERLIGHT
+      public IAsyncResult Begin_isDeviceConnected(AsyncCallback callback, object state, )
+      {
+        return send_isDeviceConnected(callback, state);
+      }
+
+      public bool End_isDeviceConnected(IAsyncResult asyncResult)
+      {
+        oprot_.Transport.EndFlush(asyncResult);
+        return recv_isDeviceConnected();
+      }
+
+      #endif
+
+      public bool isDeviceConnected()
+      {
+        #if !SILVERLIGHT
+        send_isDeviceConnected();
+        return recv_isDeviceConnected();
+
+        #else
+        var asyncResult = Begin_isDeviceConnected(null, null, );
+        return End_isDeviceConnected(asyncResult);
+
+        #endif
+      }
+      #if SILVERLIGHT
+      public IAsyncResult send_isDeviceConnected(AsyncCallback callback, object state, )
+      #else
+      public void send_isDeviceConnected()
+      #endif
+      {
+        oprot_.WriteMessageBegin(new TMessage("isDeviceConnected", TMessageType.Call, seqid_));
+        isDeviceConnected_args args = new isDeviceConnected_args();
+        args.Write(oprot_);
+        oprot_.WriteMessageEnd();
+        #if SILVERLIGHT
+        return oprot_.Transport.BeginFlush(callback, state);
+        #else
+        oprot_.Transport.Flush();
+        #endif
+      }
+
+      public bool recv_isDeviceConnected()
+      {
+        TMessage msg = iprot_.ReadMessageBegin();
+        if (msg.Type == TMessageType.Exception) {
+          TApplicationException x = TApplicationException.Read(iprot_);
+          iprot_.ReadMessageEnd();
+          throw x;
+        }
+        isDeviceConnected_result result = new isDeviceConnected_result();
+        result.Read(iprot_);
+        iprot_.ReadMessageEnd();
+        if (result.__isset.success) {
+          return result.Success;
+        }
+        throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "isDeviceConnected failed: unknown result");
+      }
 
       
       #if SILVERLIGHT
@@ -709,6 +775,7 @@ namespace Jp.Digitalmuseum.Kinect
       public Processor(Iface iface)
       {
         iface_ = iface;
+        processMap_["isDeviceConnected"] = isDeviceConnected_Process;
         processMap_["setVoiceEnabled"] = setVoiceEnabled_Process;
         processMap_["isVoiceEnabled"] = isVoiceEnabled_Process;
         processMap_["addKeyword"] = addKeyword_Process;
@@ -751,6 +818,19 @@ namespace Jp.Digitalmuseum.Kinect
           return false;
         }
         return true;
+      }
+
+      public void isDeviceConnected_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        isDeviceConnected_args args = new isDeviceConnected_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        isDeviceConnected_result result = new isDeviceConnected_result();
+        result.Success = iface_.isDeviceConnected();
+        oprot.WriteMessageBegin(new TMessage("isDeviceConnected", TMessageType.Reply, seqid)); 
+        result.Write(oprot);
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
       }
 
       public void setVoiceEnabled_Process(int seqid, TProtocol iprot, TProtocol oprot)
@@ -874,6 +954,140 @@ namespace Jp.Digitalmuseum.Kinect
         iface_.shutdown();
         return;
       }
+    }
+
+
+    #if !SILVERLIGHT
+    [Serializable]
+    #endif
+    public partial class isDeviceConnected_args : TBase
+    {
+
+      public isDeviceConnected_args() {
+      }
+
+      public void Read (TProtocol iprot)
+      {
+        TField field;
+        iprot.ReadStructBegin();
+        while (true)
+        {
+          field = iprot.ReadFieldBegin();
+          if (field.Type == TType.Stop) { 
+            break;
+          }
+          switch (field.ID)
+          {
+            default: 
+              TProtocolUtil.Skip(iprot, field.Type);
+              break;
+          }
+          iprot.ReadFieldEnd();
+        }
+        iprot.ReadStructEnd();
+      }
+
+      public void Write(TProtocol oprot) {
+        TStruct struc = new TStruct("isDeviceConnected_args");
+        oprot.WriteStructBegin(struc);
+        oprot.WriteFieldStop();
+        oprot.WriteStructEnd();
+      }
+
+      public override string ToString() {
+        StringBuilder sb = new StringBuilder("isDeviceConnected_args(");
+        sb.Append(")");
+        return sb.ToString();
+      }
+
+    }
+
+
+    #if !SILVERLIGHT
+    [Serializable]
+    #endif
+    public partial class isDeviceConnected_result : TBase
+    {
+      private bool _success;
+
+      public bool Success
+      {
+        get
+        {
+          return _success;
+        }
+        set
+        {
+          __isset.success = true;
+          this._success = value;
+        }
+      }
+
+
+      public Isset __isset;
+      #if !SILVERLIGHT
+      [Serializable]
+      #endif
+      public struct Isset {
+        public bool success;
+      }
+
+      public isDeviceConnected_result() {
+      }
+
+      public void Read (TProtocol iprot)
+      {
+        TField field;
+        iprot.ReadStructBegin();
+        while (true)
+        {
+          field = iprot.ReadFieldBegin();
+          if (field.Type == TType.Stop) { 
+            break;
+          }
+          switch (field.ID)
+          {
+            case 0:
+              if (field.Type == TType.Bool) {
+                Success = iprot.ReadBool();
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            default: 
+              TProtocolUtil.Skip(iprot, field.Type);
+              break;
+          }
+          iprot.ReadFieldEnd();
+        }
+        iprot.ReadStructEnd();
+      }
+
+      public void Write(TProtocol oprot) {
+        TStruct struc = new TStruct("isDeviceConnected_result");
+        oprot.WriteStructBegin(struc);
+        TField field = new TField();
+
+        if (this.__isset.success) {
+          field.Name = "Success";
+          field.Type = TType.Bool;
+          field.ID = 0;
+          oprot.WriteFieldBegin(field);
+          oprot.WriteBool(Success);
+          oprot.WriteFieldEnd();
+        }
+        oprot.WriteFieldStop();
+        oprot.WriteStructEnd();
+      }
+
+      public override string ToString() {
+        StringBuilder sb = new StringBuilder("isDeviceConnected_result(");
+        sb.Append("Success: ");
+        sb.Append(Success);
+        sb.Append(")");
+        return sb.ToString();
+      }
+
     }
 
 

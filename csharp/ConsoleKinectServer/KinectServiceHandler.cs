@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading;
 using Thrift.Collections;
 
-namespace ConsoleSkeletonServer
+namespace ConsoleKinectServer
 {
     class KinectServiceHandler : T.KinectService.Iface
     {
@@ -36,8 +36,13 @@ namespace ConsoleSkeletonServer
             voiceEnabled = false;
             colorEnabled = true;
             depthEnabled = false;
-            KinectStart();
             InitializeSpeechRecognition();
+            KinectStart();
+        }
+
+        public bool isDeviceConnected()
+        {
+            return Kinect != null && Kinect.Status == KinectStatus.Connected;
         }
 
         public void setVoiceEnabled(bool isEnabled)
@@ -65,6 +70,10 @@ namespace ConsoleSkeletonServer
 
         private void UpdateSpeechRecognition()
         {
+            if (!isDeviceConnected())
+            {
+                return;
+            }
             if (keywords.Count <= 0 || !voiceEnabled)
             {
                 StopSpeechRecognition();
@@ -117,6 +126,10 @@ namespace ConsoleSkeletonServer
         private int targetAngle = int.MaxValue;
         public void setAngle(int angle)
         {
+            if (!isDeviceConnected())
+            {
+                return;
+            }
             if (currentAngle != int.MaxValue)
             {
                 // Request the change.
@@ -130,7 +143,7 @@ namespace ConsoleSkeletonServer
                     lock (Kinect)
                     {
                         currentAngle = Kinect.ElevationAngle;
-                        while (true)
+                        while (!isDeviceConnected())
                         {
                             Kinect.ElevationAngle = a;
 
@@ -153,6 +166,10 @@ namespace ConsoleSkeletonServer
 
         public int getAngle()
         {
+            if (!isDeviceConnected())
+            {
+                return int.MaxValue;
+            }
             if (currentAngle != int.MaxValue)
             {
                 return currentAngle;
@@ -254,6 +271,8 @@ namespace ConsoleSkeletonServer
                 ShowStatus(ErrorCondition.KinectAppConflict);
                 return null;
             }
+
+            UpdateSpeechRecognition();
             return sensor;
         }
 

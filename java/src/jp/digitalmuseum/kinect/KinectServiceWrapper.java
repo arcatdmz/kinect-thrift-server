@@ -179,6 +179,9 @@ public class KinectServiceWrapper implements KinectService.Iface {
 		public void run() {
 			synchronized (KinectServiceWrapper.this) {
 				try {
+					if (!client.isDeviceConnected()) {
+						return;
+					}
 					frame = client.getFrame();
 				} catch (TException e) {
 					SwingUtilities.invokeLater(new Runnable() {
@@ -210,6 +213,11 @@ public class KinectServiceWrapper implements KinectService.Iface {
 		}
 	}
 
+	@Override
+	public synchronized boolean isDeviceConnected() throws TException {
+		return client.isDeviceConnected();
+	}
+	
 	@Override
 	public synchronized void setVoiceEnabled(boolean isEnabled) throws TException {
 		client.setVoiceEnabled(isEnabled);

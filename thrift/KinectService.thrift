@@ -54,6 +54,8 @@ struct Frame {
 
 service KinectService {
 
+  bool isDeviceConnected(),
+
   oneway void setVoiceEnabled(1:bool isEnabled),
   bool isVoiceEnabled(),
   oneway void addKeyword(1:string text),
