@@ -143,7 +143,7 @@ namespace ConsoleKinectServer
                     lock (Kinect)
                     {
                         currentAngle = Kinect.ElevationAngle;
-                        while (!isDeviceConnected())
+                        while (isDeviceConnected())
                         {
                             Kinect.ElevationAngle = a;
 

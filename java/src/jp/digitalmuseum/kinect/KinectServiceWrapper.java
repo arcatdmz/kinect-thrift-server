@@ -15,8 +15,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.swing.SwingUtilities;
-
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -126,6 +124,9 @@ public class KinectServiceWrapper implements KinectService.Iface {
 		} catch (TTransportException e) {
 			return false;
 		}
+		if (ses != null) {
+			ses.shutdown();
+		}
 		ses = Executors.newSingleThreadScheduledExecutor();
 		future = ses.scheduleAtFixedRate(
 				new FrameGrabber(), 0, 33, TimeUnit.MILLISECONDS);
@@ -187,11 +188,8 @@ public class KinectServiceWrapper implements KinectService.Iface {
 					}
 					frame = client.getFrame();
 				} catch (TException e) {
-					SwingUtilities.invokeLater(new Runnable() {
-						public void run() {
-							stop();
-						}
-					});
+					start(); // Restart the connection.
+					return;
 				}
 				short[] depthImageData = null;
 				if (frame.isSetImage()) {

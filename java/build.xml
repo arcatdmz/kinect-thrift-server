@@ -29,6 +29,7 @@
             </manifest>
             <zipfileset src="lib/jar-in-jar-loader.zip"/>
             <fileset dir="bin"/>
+        	<fileset dir="src"/>
             <zipfileset dir="lib" includes="libthrift-0.9.0.jar"/>
             <zipfileset dir="lib" includes="slf4j-api-1.5.8.jar"/>
             <zipfileset dir="lib" includes="slf4j-simple-1.5.8.jar"/>
@@ -39,6 +40,7 @@
     <target name="kinect-jar" depends="kinect-compile">
         <jar destfile="${kinect-jar.name}">
 	        <fileset dir="bin"/>
+        	<fileset dir="src"/>
         </jar>
     </target>
 
