@@ -29,6 +29,7 @@ public class KinectServiceWrapper implements KinectService.Iface {
 	private KinectService.Client client;
 	private Frame frame;
 	private BufferedImage image;
+	private ScheduledExecutorService ses;
 	private Future<?> future;
 	private Set<FrameListener> listeners;
 
@@ -125,8 +126,7 @@ public class KinectServiceWrapper implements KinectService.Iface {
 		} catch (TTransportException e) {
 			return false;
 		}
-		ScheduledExecutorService ses =
-				Executors.newSingleThreadScheduledExecutor();
+		ses = Executors.newSingleThreadScheduledExecutor();
 		future = ses.scheduleAtFixedRate(
 				new FrameGrabber(), 0, 33, TimeUnit.MILLISECONDS);
 		return true;
@@ -137,6 +137,9 @@ public class KinectServiceWrapper implements KinectService.Iface {
 			future.cancel(true);
 			transport.close();
 			future = null;
+		}
+		if (ses != null) {
+			ses.shutdown();
 		}
 	}
 	
