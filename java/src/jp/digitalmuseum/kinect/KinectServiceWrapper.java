@@ -53,32 +53,35 @@ public class KinectServiceWrapper implements KinectService.Iface {
 	public static final short unknownDepth = 0x1fff;
 	
 	public static void drawSkeleton(Graphics g, Map<JointType, Joint> joints, int x, int y) {
+		drawSkeleton(g, joints, x, y, 1);
+	}
+	public static void drawSkeleton(Graphics g, Map<JointType, Joint> joints, int x, int y, float scale) {
 		if (joints != null
 				&& joints.size() == 20) {
-			drawLine(g, x, y, joints,
+			drawLine(g, x, y, scale, joints,
 					JointType.HIP_CENTER,
 					JointType.SPINE,
 					JointType.SHOULDER_CENTER,
 					JointType.HEAD);
-			drawLine(g, x, y, joints,
+			drawLine(g, x, y, scale, joints,
 					JointType.SHOULDER_CENTER,
 					JointType.SHOULDER_RIGHT,
 					JointType.ELBOW_RIGHT,
 					JointType.WRIST_RIGHT,
 					JointType.HAND_RIGHT);
-			drawLine(g, x, y, joints,
+			drawLine(g, x, y, scale, joints,
 					JointType.SHOULDER_CENTER,
 					JointType.SHOULDER_LEFT,
 					JointType.ELBOW_LEFT,
 					JointType.WRIST_LEFT,
 					JointType.HAND_LEFT);
-			drawLine(g, x, y, joints,
+			drawLine(g, x, y, scale, joints,
 					JointType.HIP_CENTER,
 					JointType.HIP_RIGHT,
 					JointType.KNEE_RIGHT,
 					JointType.ANKLE_RIGHT,
 					JointType.FOOT_RIGHT);
-			drawLine(g, x, y, joints,
+			drawLine(g, x, y, scale, joints,
 					JointType.HIP_CENTER,
 					JointType.HIP_LEFT,
 					JointType.KNEE_LEFT,
@@ -87,19 +90,19 @@ public class KinectServiceWrapper implements KinectService.Iface {
 		}
 	}
 	
-	private static void drawLine(Graphics g, int x, int y, Map<JointType, Joint> joints, JointType... keys) {
+	private static void drawLine(Graphics g, int x, int y, float scale, Map<JointType, Joint> joints, JointType... keys) {
 		Joint sj = joints.get(keys[0]);
 		double sx = 0, sy = 0;
 		if (sj != null) {
-			sx = sj.screenPosition.x + x;
-			sy = sj.screenPosition.y + y;
+			sx = sj.screenPosition.x * scale + x;
+			sy = sj.screenPosition.y * scale + y;
 		}
 		for (int i = 1; i < keys.length; i ++) {
 			Joint ej = joints.get(keys[i]);
 			double ex = 0, ey = 0;
 			if (ej != null) {
-				ex = ej.screenPosition.x + x;
-				ey = ej.screenPosition.y + y;
+				ex = ej.screenPosition.x * scale + x;
+				ey = ej.screenPosition.y * scale + y;
 			}
 			if (sj != null && ej != null) {
 				g.drawLine((int)sx, (int)sy, (int)ex, (int)ey);
@@ -197,8 +200,10 @@ public class KinectServiceWrapper implements KinectService.Iface {
 					colorByteBuffer.put((byte) 0);
 					colorByteBuffer.put(imageData, 0, imageData.length - 1);
 					colorByteBuffer.rewind();
+					colorIntBuffer.clear();
 					colorIntBuffer.put(colorByteBuffer.asIntBuffer());
 					colorIntBuffer.rewind();
+					colorByteBuffer.clear();
 				}
 				if (frame.isSetDepthImage()) {
 					depthByteBuffer.put(frame.getDepthImage());
@@ -206,6 +211,8 @@ public class KinectServiceWrapper implements KinectService.Iface {
 					depthShortBuffer.put(depthByteBuffer.asShortBuffer());
 					depthShortBuffer.rewind();
 					depthImageData = depthShortBuffer.array();
+					depthByteBuffer.clear();
+					depthShortBuffer.clear();
 				}
 				for (FrameListener listener : listeners) {
 					listener.frameUpdated(frame, image, depthImageData);
