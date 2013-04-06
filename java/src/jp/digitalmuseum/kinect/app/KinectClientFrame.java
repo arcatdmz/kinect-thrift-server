@@ -101,66 +101,66 @@ public class KinectClientFrame extends JFrame implements FrameListener {
 				if (frame == null) {
 					return;
 				}
-				if (frame.isSetDepthImage()) {
-					if (depthImage == null) {
-						depthImage = new BufferedImage(
-								320, 240, BufferedImage.TYPE_INT_RGB);
-					}
-					DataBufferInt dbi = (DataBufferInt)depthImage.getRaster().getDataBuffer();
-					int[] pixels = dbi.getData();
-					for (int i = 0; i < depthImageData.length; i ++) {
-						int realDepth = KinectServiceWrapper.getRealDepth(depthImageData[i]);
-						if (realDepth == KinectServiceWrapper.tooNearDepth) {
-							pixels[i] = 0xff0000;
-						} else if (realDepth == KinectServiceWrapper.tooFarDepth) {
-							pixels[i] = 0x00ff00;
-						} else if (realDepth == KinectServiceWrapper.unknownDepth) {
-							pixels[i] = 0x0000ff;
-						} else {
-							int intensity = 0xff * Math.abs(realDepth) / KinectServiceWrapper.tooFarDepth;
-							int index = KinectServiceWrapper.getPlayerIndex(depthImageData[i]);
-							switch (index) {
-							case 1:
-							case 4:
-							case 7:
-								pixels[i] = (intensity << 16) + (intensity << 8);
-								break;
-							case 2:
-							case 5:
-								pixels[i] = (intensity << 16) + intensity;
-								break;
-							case 3:
-							case 6:
-								pixels[i] = (intensity << 8) + intensity;
-								break;
-							default:
-								pixels[i] = (intensity << 16) + (intensity << 8) + intensity;
-								break;
-							}
-						}
-					}
-					int x = (getWidth() - depthImage.getWidth() * 2) / 2;
-					int y = (getHeight() - depthImage.getHeight() * 2) / 2;
-					
-					g.drawImage(depthImage, x, y, depthImage.getWidth() * 2, depthImage.getHeight() * 2, null);
-				} else if (frame.isSetImage()) {
+//				if (frame.isSetDepthImage()) {
+//					if (depthImage == null) {
+//						depthImage = new BufferedImage(
+//								320, 240, BufferedImage.TYPE_INT_RGB);
+//					}
+//					DataBufferInt dbi = (DataBufferInt)depthImage.getRaster().getDataBuffer();
+//					int[] pixels = dbi.getData();
+//					for (int i = 0; i < depthImageData.length; i ++) {
+//						int realDepth = KinectServiceWrapper.getRealDepth(depthImageData[i]);
+//						if (realDepth == KinectServiceWrapper.tooNearDepth) {
+//							pixels[i] = 0xff0000;
+//						} else if (realDepth == KinectServiceWrapper.tooFarDepth) {
+//							pixels[i] = 0x00ff00;
+//						} else if (realDepth == KinectServiceWrapper.unknownDepth) {
+//							pixels[i] = 0x0000ff;
+//						} else {
+//							int intensity = 0xff * Math.abs(realDepth) / KinectServiceWrapper.tooFarDepth;
+//							int index = KinectServiceWrapper.getPlayerIndex(depthImageData[i]);
+//							switch (index) {
+//							case 1:
+//							case 4:
+//							case 7:
+//								pixels[i] = (intensity << 16) + (intensity << 8);
+//								break;
+//							case 2:
+//							case 5:
+//								pixels[i] = (intensity << 16) + intensity;
+//								break;
+//							case 3:
+//							case 6:
+//								pixels[i] = (intensity << 8) + intensity;
+//								break;
+//							default:
+//								pixels[i] = (intensity << 16) + (intensity << 8) + intensity;
+//								break;
+//							}
+//						}
+//					}
+//					int x = (getWidth() - depthImage.getWidth() * 2) / 2;
+//					int y = (getHeight() - depthImage.getHeight() * 2) / 2;
+//					
+//					g.drawImage(depthImage, x, y, depthImage.getWidth() * 2, depthImage.getHeight() * 2, null);
+//				} else {
 					int x = (getWidth() - image.getWidth()) / 2;
 					int y = (getHeight() - image.getHeight()) / 2;
 
 					g.drawImage(image, x, y, null);
 
-					if (frame.joints.size() == 20) {
-						joints = frame.joints;
-						skeletonLife = SKELETON_LIFE;
-					} else {
-						skeletonLife --;
-					}
-					if (skeletonLife > 0) {
-						g.setColor(Color.green);
-						((Graphics2D) g).setStroke(stroke);
-						KinectServiceWrapper.drawSkeleton(g, joints, x, y);
-					}
-				}
+//					if (frame.joints.size() == 20) {
+//						joints = frame.joints;
+//						skeletonLife = SKELETON_LIFE;
+//					} else {
+//						skeletonLife --;
+//					}
+//					if (skeletonLife > 0) {
+//						g.setColor(Color.green);
+//						((Graphics2D) g).setStroke(stroke);
+//						KinectServiceWrapper.drawSkeleton(g, joints, x, y);
+//					}
+//				}
 			}
 		};
 		panel.addMouseListener(new MouseAdapter() {
@@ -257,30 +257,30 @@ public class KinectClientFrame extends JFrame implements FrameListener {
 	public void frameUpdated(Frame frame, BufferedImage image, short[] depthImageData) {
 		this.frame = frame;
 		this.image = image;
-		this.depthImageData = depthImageData;
-		if (frame.isSetWords()) {
-			boolean save = false;
-			System.out.print("Word detected: ");
-			for (String word : frame.getWords()) {
-				System.out.print(word);
-				save |= "capture".equalsIgnoreCase(word);
-			}
-			System.out.println();
-			if (save) {
-				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh-mm-ss");
-				try {
-					File file = new File(sdf.format(new Date()) + ".jpg");
-					ImageIO.write(image, "JPEG",
-							new FileOutputStream(file));
-					System.out.print("Current image is saved as: ");
-					System.out.println(file.getAbsolutePath());
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
+//		this.depthImageData = depthImageData;
+//		if (frame.isSetWords()) {
+//			boolean save = false;
+//			System.out.print("Word detected: ");
+//			for (String word : frame.getWords()) {
+//				System.out.print(word);
+//				save |= "capture".equalsIgnoreCase(word);
+//			}
+//			System.out.println();
+//			if (save) {
+//				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh-mm-ss");
+//				try {
+//					File file = new File(sdf.format(new Date()) + ".jpg");
+//					ImageIO.write(image, "JPEG",
+//							new FileOutputStream(file));
+//					System.out.print("Current image is saved as: ");
+//					System.out.println(file.getAbsolutePath());
+//				} catch (FileNotFoundException e) {
+//					e.printStackTrace();
+//				} catch (IOException e) {
+//					e.printStackTrace();
+//				}
+//			}
+//		}
 		panel.repaint();
 	}
 	@Override

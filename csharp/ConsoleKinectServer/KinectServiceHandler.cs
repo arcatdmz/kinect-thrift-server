@@ -38,6 +38,12 @@ namespace ConsoleKinectServer
             depthEnabled = false;
             InitializeSpeechRecognition();
             KinectStart();
+
+            // Start the server listening for incoming connection requests
+            IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, T.Constants.SERVER_DEFAULT_PORT + 1);
+            DataServer server = new DataServer(this, 5, 640*480);
+            server.Init();
+            server.Start(localEndPoint);
         }
 
         public bool isDeviceConnected()
@@ -622,6 +628,55 @@ namespace ConsoleKinectServer
                     return T.JointType.FOOT_LEFT;
                 default:
                     return T.JointType.HEAD;
+            }
+        }
+
+        public static int ConvertJointType(T.JointType type)
+        {
+            switch (type)
+            {
+                case T.JointType.HIP_CENTER:
+                    return 0;
+                case T.JointType.SPINE:
+                    return 1;
+                case T.JointType.SHOULDER_CENTER:
+                    return 2;
+                case T.JointType.HEAD:
+                    return 3;
+                case T.JointType.SHOULDER_RIGHT:
+                    return 4;
+                case T.JointType.ELBOW_RIGHT:
+                    return 5;
+                case T.JointType.WRIST_RIGHT:
+                    return 6;
+                case T.JointType.HAND_RIGHT:
+                    return 7;
+                case T.JointType.SHOULDER_LEFT:
+                    return 8;
+                case T.JointType.ELBOW_LEFT:
+                    return 9;
+                case T.JointType.WRIST_LEFT:
+                    return 10;
+                case T.JointType.HAND_LEFT:
+                    return 11;
+                case T.JointType.HIP_RIGHT:
+                    return 12;
+                case T.JointType.KNEE_RIGHT:
+                    return 13;
+                case T.JointType.ANKLE_RIGHT:
+                    return 14;
+                case T.JointType.FOOT_RIGHT:
+                    return 15;
+                case T.JointType.HIP_LEFT:
+                    return 16;
+                case T.JointType.KNEE_LEFT:
+                    return 17;
+                case T.JointType.ANKLE_LEFT:
+                    return 18;
+                case T.JointType.FOOT_LEFT:
+                    return 19;
+                default:
+                    return 3; // HEAD
             }
         }
         #endregion Kinect Skeleton processing

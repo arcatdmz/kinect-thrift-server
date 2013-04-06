@@ -3,10 +3,17 @@ package jp.digitalmuseum.kinect;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -40,7 +47,7 @@ public class KinectServiceWrapper implements KinectService.Iface {
 		TProtocol protocol = new TBinaryProtocol(transport);
 		client = new KinectService.Client(protocol);
 		image = new BufferedImage(
-				640, 480, BufferedImage.TYPE_INT_BGR);
+				640, 480, BufferedImage.TYPE_INT_RGB);
 		listeners = new HashSet<FrameListener>();
 	}
 	
@@ -164,59 +171,132 @@ public class KinectServiceWrapper implements KinectService.Iface {
 	}
 	
 	private class FrameGrabber implements Runnable {
+		private Socket socket;
+		private DataInputStream dis;
+		private DataOutputStream dos;
+
 		private DataBufferInt colorImageBuffer;
-		private ByteBuffer colorByteBuffer;
 		private IntBuffer colorIntBuffer;
-		private ByteBuffer depthByteBuffer;
-		private ShortBuffer depthShortBuffer;
+		private ByteBuffer byteBuffer;
+		byte[] buffer;
 
 		public FrameGrabber() {
+			connect();
 			colorImageBuffer = (DataBufferInt) image.getRaster().getDataBuffer();
-			colorByteBuffer = ByteBuffer.allocate(640 * 480 * 4);
 			colorIntBuffer = IntBuffer.wrap(colorImageBuffer.getData());
-			depthByteBuffer = ByteBuffer.allocate(320 * 240 * 2);
+
+			buffer = new byte[640 * 480 * 4];
+			byteBuffer = ByteBuffer.wrap(buffer);
 
 			// C# server running on Windows converts short[] to byte[] with little-endian.
 			// Therefore, we need to specify the endian-ness here to reconstruct it correctly.
-			depthByteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-			
-			depthShortBuffer = ShortBuffer.allocate(320 * 240);
+			byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
 		}
 
 		public void run() {
-			synchronized (KinectServiceWrapper.this) {
-				try {
-					if (!client.isDeviceConnected()) {
-						return;
-					}
-					frame = client.getFrame();
-				} catch (TException e) {
-					start(); // Restart the connection.
+			if (!socket.isConnected()) {
+				if (!connect()) {
 					return;
 				}
-				short[] depthImageData = null;
-				if (frame.isSetImage()) {
-					byte[] imageData = frame.getImage();
-					colorByteBuffer.put((byte) 0);
-					colorByteBuffer.put(imageData, 0, imageData.length - 1);
-					colorByteBuffer.rewind();
-					colorIntBuffer.clear();
-					colorIntBuffer.put(colorByteBuffer.asIntBuffer());
-					colorIntBuffer.rewind();
-					colorByteBuffer.clear();
+			}
+			try {
+				// Request info.
+				//System.out.println("hello");
+				dos.write("Hello".getBytes());
+				dos.flush();
+				
+				// Receive info.
+
+				// Skeleton availability
+				byte b = dis.readByte();
+				boolean isSkeletonAvailable = b == 1;
+				//System.out.println(isSkeletonAvailable);
+
+				// Image length
+				ByteBuffer bb = ByteBuffer.allocate(8);
+				bb.order(ByteOrder.LITTLE_ENDIAN);
+				for (int i = 0; i < 4; i ++) {
+					bb.put(dis.readByte());
 				}
-				if (frame.isSetDepthImage()) {
-					depthByteBuffer.put(frame.getDepthImage());
-					depthByteBuffer.rewind();
-					depthShortBuffer.put(depthByteBuffer.asShortBuffer());
-					depthShortBuffer.rewind();
-					depthImageData = depthShortBuffer.array();
-					depthByteBuffer.clear();
-					depthShortBuffer.clear();
+				bb.rewind();
+				int len = bb.getInt();
+				//System.out.println(len);
+
+				// Image data
+				int read = 0;
+				while (true) {
+					int r = dis.read(buffer, read, len - read);
+					read += r;
+					if (r == 0 || read == len) {
+						break;
+					}
 				}
+				byteBuffer.rewind();
+				colorIntBuffer.clear();
+				colorIntBuffer.put(byteBuffer.asIntBuffer());
+				
+				HashMap<JointType,Joint> jointMap = new HashMap<JointType,Joint>();
+				Frame frame = new Frame(0, jointMap);
+				if (isSkeletonAvailable) {
+					//
+					for (int i = 0; i < 4; i ++) {
+						bb.put(dis.readByte());
+					}
+					bb.rewind();
+					int numJoints = bb.getInt();
+
+					for (int i = 0; i < numJoints; i ++) {
+
+						for (int j = 0; j < 4; j ++) {
+							bb.put(dis.readByte());
+						}
+						bb.rewind();
+						JointType jt = JointType.findByValue(bb.getInt());
+
+						double[] coords = new double[5];
+						for (int k = 0; k < 5; k ++) {
+							for (int j = 0; j < 8; j ++) {
+								bb.put(dis.readByte());
+							}
+							bb.rewind();
+							coords[k] = bb.getDouble();
+						}
+						Joint joint = new Joint();
+						joint.position = new Position3D(coords[0], coords[1], coords[2]);
+						joint.screenPosition = new Position2D(coords[3], coords[4]);
+
+						jointMap.put(jt, joint);
+					}
+				}
+
 				for (FrameListener listener : listeners) {
-					listener.frameUpdated(frame, image, depthImageData);
+					listener.frameUpdated(frame, image, null);
 				}
+
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				try {
+					socket.close();
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+			}
+			
+		}
+		
+		private boolean connect() {
+			try {
+				if (socket == null) {
+					socket = new Socket();
+				}
+				socket.connect(new InetSocketAddress("127.0.0.1", KinectServiceConstants.SERVER_DEFAULT_PORT + 1), 1000);
+				dis = new DataInputStream(socket.getInputStream());
+				dos = new DataOutputStream(socket.getOutputStream());
+				return true;
+			} catch (Exception e) {
+				e.printStackTrace();
+				return false;
 			}
 		}
 	}
