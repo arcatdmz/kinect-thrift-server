@@ -132,7 +132,7 @@ public class KinectServiceWrapper implements KinectService.Iface {
 		}
 		ses = Executors.newSingleThreadScheduledExecutor();
 		future = ses.scheduleAtFixedRate(
-				new FrameGrabber(), 0, 33, TimeUnit.MILLISECONDS);
+				new FrameGrabber(), 0, 100, TimeUnit.MILLISECONDS);
 		return true;
 	}
 	
