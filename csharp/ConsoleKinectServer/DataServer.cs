@@ -141,6 +141,8 @@ namespace ConsoleKinectServer
             SocketAsyncEventArgs readEventArgs = m_readWritePool.Pop();
             ((AsyncUserToken)readEventArgs.UserToken).Socket = e.AcceptSocket;
 
+            ((AsyncUserToken)readEventArgs.UserToken).Received = 0;
+
             // As soon as the client is connected, post a receive to the connection
             bool willRaiseEvent = e.AcceptSocket.ReceiveAsync(readEventArgs);
             if(!willRaiseEvent){
@@ -183,59 +185,144 @@ namespace ConsoleKinectServer
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
             if (e.BytesTransferred > 0 && e.SocketError == SocketError.Success)
             {
-                //increment the count of the total bytes receive by the server
+
+                // increment the count of the total bytes receive by the server
                 Interlocked.Add(ref m_totalBytesRead, e.BytesTransferred);
+                token.Received += e.BytesTransferred;
 
-                //build data for submission
-                byte[] data = ((AsyncUserToken)e.UserToken).Data;
-                Frame frame = kinect.getFrame();
-                bool isSkeletonAvailable = frame.Joints.Count > 0;
-                data[0] = (byte)(isSkeletonAvailable ? 1 : 0);
-                Array.Copy(BitConverter.GetBytes(frame.Image.Length), 0, data, 1, 4);
-                Array.Copy(frame.Image, 0, data, 1 + 4, frame.Image.Length);
-                int index = 1 + 4 + frame.Image.Length;
-                if (isSkeletonAvailable)
+                if (token.Received < 2)
                 {
-                    Array.Copy(BitConverter.GetBytes(frame.Joints.Count), 0, data, index, 4);
-                    index += 4;
-
-                    foreach (KeyValuePair<JointType, Joint> pair in frame.Joints)
+                    int offset = e.Offset + 1;
+                    e.SetBuffer(offset, e.Buffer.Length - offset);
+                    bool willRaiseEvent = token.Socket.ReceiveAsync(e);
+                    if (!willRaiseEvent)
                     {
-                        // Joint type
-                        int jointType = KinectServiceHandler.ConvertJointType(pair.Key);
-                        Array.Copy(BitConverter.GetBytes(jointType), 0, data, index, 4);
-                        index += 4;
+                        ProcessReceive(e);
+                    }
+                    return;
+                }
 
-                        //
-                        Joint j = pair.Value;
-                        Array.Copy(BitConverter.GetBytes(j.Position.X), 0, data, index, 8);
-                        index += 8;
-                        Array.Copy(BitConverter.GetBytes(j.Position.Y), 0, data, index, 8);
-                        index += 8;
-                        Array.Copy(BitConverter.GetBytes(j.Position.Z), 0, data, index, 8);
-                        index += 8;
-                        Array.Copy(BitConverter.GetBytes(j.ScreenPosition.X), 0, data, index, 8);
-                        index += 8;
-                        Array.Copy(BitConverter.GetBytes(j.ScreenPosition.Y), 0, data, index, 8);
-                        index += 8;
+                // get parameter
+                char c = BitConverter.ToChar(e.Buffer, e.Offset + e.BytesTransferred - 2);
+
+                byte[] data = token.Data;
+                int index;
+                if (c == 'c')
+                {
+                    index = BuildColorImageFrame(data);
+                }
+                else if (c == 'd')
+                {
+                    index = BuildDepthImageFrame(data);
+                }
+                else
+                {
+                    index = 0;
+                }
+
+                //send the data received back to the client
+                if (index > 0)
+                {
+                    e.SetBuffer(data, 0, index);
+                    token.Sent = 0;
+                    token.Sending = index;
+                    bool willRaiseEvent = token.Socket.SendAsync(e);
+                    if (!willRaiseEvent)
+                    {
+                        ProcessSend(e);
                     }
                 }
-                e.SetBuffer(data, 0, index);
-
-                //echo the data received back to the client
-                token.Sent = 0;
-                token.Sending = index;
-                bool willRaiseEvent = token.Socket.SendAsync(e);
-                if (!willRaiseEvent)
-                {
-                    ProcessSend(e);
-                }
-              
             }
             else
             {
                 CloseClientSocket(e);
             }
+        }
+
+        /// <summary>
+        /// Build a depth image frame.
+        /// </summary>
+        /// <param name="data">Data for submission.</param>
+        /// <returns></returns>
+        private int BuildDepthImageFrame(byte[] data)
+        {
+            return BuildImageFrame(data, 'd', kinect.getFrame().DepthImage);
+        }
+
+        /// <summary>
+        /// Build a color image frame.
+        /// </summary>
+        /// <param name="data">Data for submission.</param>
+        /// <returns></returns>
+        private int BuildColorImageFrame(byte[] data)
+        {
+            return BuildImageFrame(data, 'c', kinect.getFrame().Image);
+        }
+
+        /// <summary>
+        /// Build an image frame.
+        /// </summary>
+        /// <param name="data">Data for submission.</param>
+        /// <returns></returns>
+        private int BuildImageFrame(byte[] data, char c, byte[] imageData)
+        {
+            Frame frame = kinect.getFrame();
+            bool isSkeletonAvailable = frame != null && frame.Joints.Count > 0;
+
+            int index = 0;
+            index = WriteChar(data, c, index);
+            index = WriteInt(data, frame != null ? imageData.Length : 0, index);
+            index = WriteByte(data, (byte)(isSkeletonAvailable ? 1 : 0), index);
+
+            if (frame != null)
+            {
+                Array.Copy(imageData, 0, data, index, imageData.Length);
+                index += imageData.Length;
+            }
+
+            if (isSkeletonAvailable)
+            {
+                index = WriteInt(data, frame.Joints.Count, index);
+                foreach (KeyValuePair<JointType, Joint> pair in frame.Joints)
+                {
+                    // Joint type
+                    int jointType = KinectServiceHandler.ConvertJointType(pair.Key);
+                    index = WriteInt(data, jointType, index);
+
+                    // Joint coordinates
+                    Joint j = pair.Value;
+                    index = WriteDouble(data, j.Position.X, index);
+                    index = WriteDouble(data, j.Position.Y, index);
+                    index = WriteDouble(data, j.Position.Z, index);
+                    index = WriteDouble(data, j.ScreenPosition.X, index);
+                    index = WriteDouble(data, j.ScreenPosition.Y, index);
+                }
+            }
+            return index;
+        }
+
+        private int WriteByte(byte[] data, byte b, int index)
+        {
+            data[index] = b;
+            return index + 1;
+        }
+
+        private int WriteChar(byte[] data, char c, int index)
+        {
+            Array.Copy(BitConverter.GetBytes(c), 0, data, index, 2);
+            return index + 2;
+        }
+
+        private int WriteInt(byte[] data, int i, int index)
+        {
+            Array.Copy(BitConverter.GetBytes(i), 0, data, index, 4);
+            return index + 4;
+        }
+
+        private int WriteDouble(byte[] data, double d, int index)
+        {
+            Array.Copy(BitConverter.GetBytes(d), 0, data, index, 8);
+            return index + 8;
         }
 
         /// <summary>
@@ -267,6 +354,7 @@ namespace ConsoleKinectServer
                 {
                     Console.WriteLine("{0} bytes sent. Status complete.", token.Sent);
                     // read the next block of data send from the client
+                    token.Received = 0;
                     bool willRaiseEvent = token.Socket.ReceiveAsync(e);
                     if (!willRaiseEvent)
                     {

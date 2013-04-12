@@ -178,6 +178,7 @@ public class KinectServiceWrapper implements KinectService.Iface {
 		private DataBufferInt colorImageBuffer;
 		private IntBuffer colorIntBuffer;
 		private ByteBuffer byteBuffer;
+		private ByteBuffer bb;
 		byte[] buffer;
 
 		public FrameGrabber() {
@@ -187,10 +188,12 @@ public class KinectServiceWrapper implements KinectService.Iface {
 
 			buffer = new byte[640 * 480 * 4];
 			byteBuffer = ByteBuffer.wrap(buffer);
+			bb = ByteBuffer.allocate(8);
 
 			// C# server running on Windows converts short[] to byte[] with little-endian.
 			// Therefore, we need to specify the endian-ness here to reconstruct it correctly.
 			byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+			bb.order(ByteOrder.LITTLE_ENDIAN);
 		}
 
 		public void run() {
@@ -201,28 +204,33 @@ public class KinectServiceWrapper implements KinectService.Iface {
 			}
 			try {
 				// Request info.
-				//System.out.println("hello");
-				dos.write("Hello".getBytes());
+				bb.putChar('c');
+				bb.rewind();
+				dos.writeByte(bb.get());
+				dos.writeByte(bb.get());
 				dos.flush();
+				bb.rewind();
 				
 				// Receive info.
+				//  char: header
+				bb.put(dis.readByte());
+				bb.put(dis.readByte());
+				bb.rewind();
+				char c = bb.getChar();
+				bb.rewind();
 
-				// Skeleton availability
-				byte b = dis.readByte();
-				boolean isSkeletonAvailable = b == 1;
-				//System.out.println(isSkeletonAvailable);
-
-				// Image length
-				ByteBuffer bb = ByteBuffer.allocate(8);
-				bb.order(ByteOrder.LITTLE_ENDIAN);
+				//  int: image length
 				for (int i = 0; i < 4; i ++) {
 					bb.put(dis.readByte());
 				}
 				bb.rewind();
 				int len = bb.getInt();
-				//System.out.println(len);
 
-				// Image data
+				//  byte: skeleton availability
+				byte b = dis.readByte();
+				boolean isSkeletonAvailable = b == 1;
+
+				//  int[]: image data
 				int read = 0;
 				while (true) {
 					int r = dis.read(buffer, read, len - read);
@@ -232,8 +240,13 @@ public class KinectServiceWrapper implements KinectService.Iface {
 					}
 				}
 				byteBuffer.rewind();
-				colorIntBuffer.clear();
-				colorIntBuffer.put(byteBuffer.asIntBuffer());
+
+				if (c == 'c') {
+					colorIntBuffer.clear();
+					colorIntBuffer.put(byteBuffer.asIntBuffer());
+				} else if (c == 'd') {
+					//
+				}
 				
 				HashMap<JointType,Joint> jointMap = new HashMap<JointType,Joint>();
 				Frame frame = new Frame(0, jointMap);

@@ -34,15 +34,8 @@ namespace ConsoleKinectServer
             set { data = value; }
         }
 
-        public int Sending
-        {
-            get;
-            set;
-        }
-        public int Sent
-        {
-            get;
-            set;
-        }
+        public int Sending;
+        public int Sent;
+        public int Received;
     }
 }

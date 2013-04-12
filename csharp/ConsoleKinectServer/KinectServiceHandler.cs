@@ -537,6 +537,10 @@ namespace ConsoleKinectServer
                     skeletonFrame.CopySkeletonDataTo(skeletonData);
                     foreach (Skeleton skeleton in skeletonData)
                     {
+                        if (skeleton == null)
+                        {
+                            continue;
+                        }
                         if (SkeletonTrackingState.Tracked == skeleton.TrackingState)
                         {
                             // TODO Compare tracking id with skeleton.TrackingId
